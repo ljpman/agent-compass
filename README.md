@@ -27,27 +27,46 @@
 
 ---
 
+## For AI Agents
+
+If you are an AI coding agent (Codex, OpenClaw, Claude Code, Cursor, etc.) installing Agent Compass for a user:
+
+- **Do not** treat this repository as a Codex Skill or OpenClaw Skill.
+- Agent Compass is a **Node.js CLI** published on npm.
+- Prefer npm/npx:
+  ```bash
+  npx -y agent-compass ask "<user task>"
+  ```
+- For persistent installation:
+  ```bash
+  npm install -g agent-compass
+  ```
+- Only clone this repository if the user wants to **develop or modify** Agent Compass itself.
+
+See [docs/agent-install.md](docs/agent-install.md) for details.
+
+---
+
 ## 快速开始
 
 ```bash
-# 克隆仓库
-git clone https://github.com/yourname/agent-compass.git
-cd agent-compass
+# 一行命令试用
+npx -y agent-compass ask "帮我生成个图"
 
-# 安装依赖
-pnpm install
-
-# 试一下
-pnpm dev ask "帮我生成个图"
+# 全局安装
+npm install -g agent-compass
+agent-compass ask "帮我生成个图"
 ```
 
 ## Quick Start (English)
 
 ```bash
-git clone https://github.com/yourname/agent-compass.git
-cd agent-compass
-pnpm install
-pnpm dev ask "generate an image for me"
+# One-shot
+npx -y agent-compass ask "generate an image for me"
+
+# Global install
+npm install -g agent-compass
+agent-compass ask "generate an image for me"
 ```
 
 ---

@@ -1,7 +1,7 @@
 {
   "name": "agent-compass",
-  "version": "0.1.0",
-  "description": "帮 AI Agent 为每个任务找到最合适的技能。Agent Compass helps AI agents pick the right skill, plugin, or tool for each task.",
+  "version": "0.1.1",
+  "description": "Help AI agents pick the right skill, plugin, or tool for each task.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -23,7 +23,8 @@
     "examples",
     "README.md",
     "LICENSE",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "AGENTS.md"
   ],
   "scripts": {
     "build": "tsup",

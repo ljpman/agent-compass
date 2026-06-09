@@ -7,6 +7,7 @@ import { formatConversational } from "./output/formatConversational.js";
 import { formatDetailed } from "./output/formatDetailed.js";
 import { formatDeveloperJson } from "./output/formatDeveloperJson.js";
 import { loadState, saveState } from "./session/sessionState.js";
+import { setupIntegration } from "./setup/setupIntegration.js";
 
 const program = new Command();
 
@@ -137,6 +138,21 @@ program
         console.log(`注意: ${entry.enablement.notes}`);
       }
     }
+  });
+
+// ── setup command ──────────────────────────────────────────────────
+program
+  .command("setup")
+  .description("为 AI agent 创建集成配置文件")
+  .argument("<agent>", "目标 agent: codex, claude, openclaw, cursor, all")
+  .action((agent: string) => {
+    const validAgents = ["codex", "claude", "openclaw", "cursor", "all"];
+    if (!validAgents.includes(agent)) {
+      console.log(`未知 agent: ${agent}`);
+      console.log(`支持: ${validAgents.join(", ")}`);
+      process.exit(1);
+    }
+    setupIntegration(agent);
   });
 
 program.parse();

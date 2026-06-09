@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.1.1
+
+Agent-friendly installation patch.
+
+### Changes
+
+- Added `AGENTS.md` — explicit instructions for AI coding agents
+- Added `docs/agent-install.md` — installation guide for agents
+- Added `setup` command — create integration files for Codex, Claude Code, OpenClaw, Cursor
+- Updated README with "For AI agents" section
+- Updated Quick Start to use `npx -y agent-compass ask` by default
+- Updated package.json description to English
+- Clarified: Agent Compass is a Node.js CLI, not a Codex/OpenClaw Skill
+
 ## v0.1.0
 
 Initial release.
