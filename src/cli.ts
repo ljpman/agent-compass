@@ -14,7 +14,7 @@ const program = new Command();
 program
   .name("agent-compass")
   .description("帮 AI Agent 为每个任务找到最合适的技能")
-  .version("0.1.2");
+  .version("0.1.3");
 
 // ── ask command ────────────────────────────────────────────────────
 program
@@ -144,15 +144,17 @@ program
 program
   .command("setup")
   .description("为 AI agent 创建集成配置文件")
-  .argument("<agent>", "目标 agent: codex, claude, openclaw, cursor, all")
-  .action((agent: string) => {
-    const validAgents = ["codex", "claude", "openclaw", "cursor", "all"];
+  .argument("<agent>", "目标 agent: codex, codex-skill, claude, openclaw, cursor, all")
+  .option("--force", "覆盖已存在的文件")
+  .option("--dry-run", "仅显示将要写入的文件，不实际写入")
+  .action((agent: string, options: { force?: boolean; dryRun?: boolean }) => {
+    const validAgents = ["codex", "codex-skill", "claude", "openclaw", "cursor", "all"];
     if (!validAgents.includes(agent)) {
       console.log(`未知 agent: ${agent}`);
       console.log(`支持: ${validAgents.join(", ")}`);
       process.exit(1);
     }
-    setupIntegration(agent);
+    setupIntegration(agent, options);
   });
 
 program.parse();

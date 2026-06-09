@@ -90,7 +90,17 @@ npx -y agent-compass setup openclaw
 npx -y agent-compass setup cursor
 ```
 
-See [docs/slash-adapters.md](docs/slash-adapters.md) for details.
+### Install as Codex Skill
+
+To make Agent Compass appear in Codex's Skills list:
+
+```bash
+npx -y agent-compass setup codex-skill
+```
+
+This writes `~/.codex/skills/agent-compass/SKILL.md` so Codex discovers it.
+
+See [docs/codex-skill.md](docs/codex-skill.md) and [docs/slash-adapters.md](docs/slash-adapters.md) for details.
 
 ---
 

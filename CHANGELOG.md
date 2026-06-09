@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.1.2 (patch)
+
+Codex Skill Wrapper support.
+
+### Features
+
+- `setup codex-skill` — installs Agent Compass as a real Codex Skill
+- Writes `~/.codex/skills/agent-compass/SKILL.md` + `agents/openai.yaml`
+- `--force` flag to overwrite existing files
+- `--dry-run` flag to preview without writing
+- Idempotent: safe to run multiple times
+
+### Docs
+
+- Added docs/codex-skill.md
+- Updated README with Codex Skill install instructions
+
 ## v0.1.2
 
 Slash Adapter / Agent Wrapper support.

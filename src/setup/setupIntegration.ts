@@ -1,6 +1,8 @@
 import { writeFileSync, existsSync, readFileSync, mkdirSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 
+import { homedir } from "node:os";
+
 // ── Section marker for idempotent append ───────────────────────────
 const SECTION_MARKER = "<!-- agent-compass:start -->";
 const SECTION_MARKER_END = "<!-- agent-compass:end -->";
@@ -164,6 +166,56 @@ Use the result to suggest the best skill, plugin, MCP server, CLI tool, repo scr
 - Returns 2-3 short recommendations with a clear suggestion.
 `;
 
+// ── Codex Skill adapter ────────────────────────────────────────────
+const CODEX_SKILL_MD = `---
+name: agent-compass
+description: Helps Codex pick the right skill, plugin, MCP server, CLI tool, repo script, or workflow for a task. Use when the user says /agent-compass, asks which skill/tool/plugin to use, or wants help choosing the best way to complete a task before execution.
+---
+
+# Agent Compass
+
+Use this skill when the user asks which Skill, plugin, MCP server, CLI tool, repo script, or workflow should be used for a task.
+
+Also use this skill when the user starts with:
+
+/agent-compass <task>
+
+## Behavior
+
+1. Treat the text after \`/agent-compass\` as the task.
+2. Run Agent Compass through the npm CLI:
+
+\`\`\`bash
+npx -y agent-compass ask "<task>"
+\`\`\`
+
+3. Show the result to the user.
+4. Keep the response short and conversational.
+5. If the user chooses an option, continue with that option when possible.
+6. If installation or risky execution is needed, ask for confirmation first.
+
+## Important
+
+Agent Compass is a Node.js CLI wrapped as a Codex Skill.
+
+Do not clone the Agent Compass repository unless the user explicitly wants to develop Agent Compass itself.
+
+Do not use skill-installer to install Agent Compass from GitHub as if the entire repo were a Codex Skill.
+
+Use the published npm package:
+
+\`\`\`bash
+npx -y agent-compass ask "<task>"
+\`\`\`
+`;
+
+const CODEX_OPENAI_YAML = `interface:
+  display_name: Agent Compass
+  short_description: Find the right skill, plugin, or tool for each task.
+  icon: compass
+  color: blue
+`;
+
 // ── Helper functions ───────────────────────────────────────────────
 
 function ensureDir(dirPath: string): void {
@@ -219,6 +271,46 @@ function setupCodex(): void {
   appendSection("AGENTS.md", CODEX_SECTION);
 }
 
+function setupCodexSkill(options: SetupOptions = {}): void {
+  const home = options.homeOverride ?? homedir();
+  const skillDir = resolve(home, ".codex", "skills", "agent-compass");
+  const skillMd = resolve(skillDir, "SKILL.md");
+  const openaiYaml = resolve(skillDir, "agents", "openai.yaml");
+
+  if (options.dryRun) {
+    console.log(`[试运行] 将写入:`);
+    console.log(`  ${skillMd}`);
+    console.log(`  ${openaiYaml}`);
+    return;
+  }
+
+  // Create directory
+  if (!existsSync(skillDir)) {
+    mkdirSync(skillDir, { recursive: true });
+    console.log(`✅ 已创建目录 ${skillDir}`);
+  }
+
+  // Write SKILL.md
+  if (existsSync(skillMd) && !options.force) {
+    console.log(`⏭️  ${skillMd} 已存在，使用 --force 覆盖`);
+  } else {
+    writeFileSync(skillMd, CODEX_SKILL_MD, "utf-8");
+    console.log(`✅ 已写入 ${skillMd}`);
+  }
+
+  // Write openai.yaml
+  const agentsDir = resolve(skillDir, "agents");
+  if (!existsSync(agentsDir)) {
+    mkdirSync(agentsDir, { recursive: true });
+  }
+  if (existsSync(openaiYaml) && !options.force) {
+    console.log(`⏭️  ${openaiYaml} 已存在，使用 --force 覆盖`);
+  } else {
+    writeFileSync(openaiYaml, CODEX_OPENAI_YAML, "utf-8");
+    console.log(`✅ 已写入 ${openaiYaml}`);
+  }
+}
+
 function setupClaude(): void {
   writeFileIfNotExists(".claude/commands/agent-compass.md", CLAUDE_COMMAND_CONTENT);
   appendSection("CLAUDE.md", CLAUDE_MD_SECTION);
@@ -235,12 +327,21 @@ function setupCursor(): void {
 
 // ── Main entry ─────────────────────────────────────────────────────
 
-export function setupIntegration(agent: string): void {
+export interface SetupOptions {
+  force?: boolean;
+  dryRun?: boolean;
+  homeOverride?: string; // for testing: override homedir()
+}
+
+export function setupIntegration(agent: string, options: SetupOptions = {}): void {
   console.log(`\n🔧 设置 ${agent} 集成...\n`);
 
   switch (agent) {
     case "codex":
       setupCodex();
+      break;
+    case "codex-skill":
+      setupCodexSkill(options);
       break;
     case "claude":
       setupClaude();
@@ -253,13 +354,14 @@ export function setupIntegration(agent: string): void {
       break;
     case "all":
       setupCodex();
+      setupCodexSkill(options);
       setupClaude();
       setupOpenClaw();
       setupCursor();
       break;
     default:
       console.log(`❌ 未知 agent: ${agent}`);
-      console.log(`支持: codex, claude, openclaw, cursor, all`);
+      console.log(`支持: codex, codex-skill, claude, openclaw, cursor, all`);
       process.exit(1);
   }
 

@@ -4,10 +4,12 @@ import { existsSync, readFileSync, rmSync, mkdirSync, writeFileSync } from "node
 import { setupIntegration } from "../src/setup/setupIntegration.js";
 
 const TEST_DIR = resolve(import.meta.dirname, "..", ".test-setup");
+const FAKE_HOME = resolve(TEST_DIR, "fake-home");
 
 function setup(): void {
   if (existsSync(TEST_DIR)) rmSync(TEST_DIR, { recursive: true });
   mkdirSync(TEST_DIR, { recursive: true });
+  mkdirSync(FAKE_HOME, { recursive: true });
   process.chdir(TEST_DIR);
 }
 
@@ -20,8 +22,16 @@ function readFile(path: string): string {
   return readFileSync(resolve(TEST_DIR, path), "utf-8");
 }
 
+function readHomeFile(path: string): string {
+  return readFileSync(resolve(FAKE_HOME, path), "utf-8");
+}
+
 function fileExists(path: string): boolean {
   return existsSync(resolve(TEST_DIR, path));
+}
+
+function homeFileExists(path: string): boolean {
+  return existsSync(resolve(FAKE_HOME, path));
 }
 
 describe("setup adapters", () => {
@@ -77,15 +87,16 @@ describe("setup adapters", () => {
   });
 
   it("setup all creates all adapter files", () => {
-    setupIntegration("all");
+    setupIntegration("all", { homeOverride: FAKE_HOME });
     expect(fileExists("AGENTS.md")).toBe(true);
+    expect(homeFileExists(".codex/skills/agent-compass/SKILL.md")).toBe(true);
     expect(fileExists(".claude/commands/agent-compass.md")).toBe(true);
     expect(fileExists("integrations/openclaw/agent-compass/SKILL.md")).toBe(true);
     expect(fileExists(".cursor/rules/agent-compass.md")).toBe(true);
   });
 
   it("generated files contain npx -y agent-compass ask", () => {
-    setupIntegration("all");
+    setupIntegration("all", { homeOverride: FAKE_HOME });
     for (const file of [
       "AGENTS.md",
       ".claude/commands/agent-compass.md",
@@ -110,5 +121,40 @@ describe("setup adapters", () => {
     expect(fileExists("docs/openclaw-skill-wrapper.md")).toBe(true);
     const content = readFile("docs/openclaw-skill-wrapper.md");
     expect(content).toContain("openclaw");
+  });
+
+  it("setup codex-skill generates SKILL.md", () => {
+    setupIntegration("codex-skill", { homeOverride: FAKE_HOME });
+    expect(homeFileExists(".codex/skills/agent-compass/SKILL.md")).toBe(true);
+    const content = readHomeFile(".codex/skills/agent-compass/SKILL.md");
+    expect(content).toContain("name: agent-compass");
+    expect(content).toContain("description:");
+  });
+
+  it("setup codex-skill SKILL.md contains npx command", () => {
+    setupIntegration("codex-skill", { homeOverride: FAKE_HOME });
+    const content = readHomeFile(".codex/skills/agent-compass/SKILL.md");
+    expect(content).toContain("npx -y agent-compass ask");
+  });
+
+  it("setup codex-skill is idempotent with --force", () => {
+    setupIntegration("codex-skill", { homeOverride: FAKE_HOME });
+    setupIntegration("codex-skill", { homeOverride: FAKE_HOME, force: true });
+    expect(homeFileExists(".codex/skills/agent-compass/SKILL.md")).toBe(true);
+  });
+
+  it("setup codex-skill skips without --force if exists", () => {
+    setupIntegration("codex-skill", { homeOverride: FAKE_HOME });
+    const content1 = readHomeFile(".codex/skills/agent-compass/SKILL.md");
+    setupIntegration("codex-skill", { homeOverride: FAKE_HOME });
+    const content2 = readHomeFile(".codex/skills/agent-compass/SKILL.md");
+    expect(content1).toBe(content2);
+  });
+
+  it("setup codex-skill generates openai.yaml", () => {
+    setupIntegration("codex-skill", { homeOverride: FAKE_HOME });
+    expect(homeFileExists(".codex/skills/agent-compass/agents/openai.yaml")).toBe(true);
+    const content = readHomeFile(".codex/skills/agent-compass/agents/openai.yaml");
+    expect(content).toContain("display_name: Agent Compass");
   });
 });
