@@ -69,6 +69,29 @@ npm install -g agent-compass
 agent-compass ask "generate an image for me"
 ```
 
+## Use inside an AI agent
+
+```bash
+npx -y agent-compass setup all
+```
+
+Then use:
+
+```
+/agent-compass 帮我生成个图
+```
+
+Or configure one agent:
+
+```bash
+npx -y agent-compass setup codex
+npx -y agent-compass setup claude
+npx -y agent-compass setup openclaw
+npx -y agent-compass setup cursor
+```
+
+See [docs/slash-adapters.md](docs/slash-adapters.md) for details.
+
 ---
 
 ## 为什么需要它？

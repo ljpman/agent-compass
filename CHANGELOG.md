@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.1.2
+
+Slash Adapter / Agent Wrapper support.
+
+### Features
+
+- `setup` command generates adapter files for Codex, Claude Code, OpenClaw, Cursor
+- `setup codex` — appends Agent Compass section to AGENTS.md (idempotent)
+- `setup claude` — creates .claude/commands/agent-compass.md + updates CLAUDE.md
+- `setup openclaw` — creates integrations/openclaw/agent-compass/SKILL.md
+- `setup cursor` — creates .cursor/rules/agent-compass.md
+- `setup all` — configures all supported agents
+- All adapters call `npx -y agent-compass ask "<task>"`
+- Idempotent: safe to run multiple times
+- Existing files are never overwritten
+
+### Docs
+
+- Added docs/slash-adapters.md
+- Added docs/openclaw-skill-wrapper.md
+- Updated README with "Use inside an AI agent" section
+
 ## v0.1.1
 
 Agent-friendly installation patch.

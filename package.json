@@ -1,6 +1,6 @@
 {
   "name": "agent-compass",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Help AI agents pick the right skill, plugin, or tool for each task.",
   "type": "module",
   "main": "./dist/index.js",
@@ -21,6 +21,7 @@
     "registry",
     "docs",
     "examples",
+    "integrations",
     "README.md",
     "LICENSE",
     "CHANGELOG.md",

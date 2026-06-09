@@ -14,7 +14,7 @@ const program = new Command();
 program
   .name("agent-compass")
   .description("帮 AI Agent 为每个任务找到最合适的技能")
-  .version("0.1.0");
+  .version("0.1.2");
 
 // ── ask command ────────────────────────────────────────────────────
 program
