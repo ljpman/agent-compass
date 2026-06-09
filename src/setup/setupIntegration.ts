@@ -1,6 +1,5 @@
 import { writeFileSync, existsSync, readFileSync, mkdirSync } from "node:fs";
 import { resolve, dirname } from "node:path";
-
 import { homedir } from "node:os";
 
 // ── Section marker for idempotent append ───────────────────────────
@@ -107,41 +106,6 @@ Use the output to recommend 2-3 choices and continue the user's task.
 - Use the published npm package via npx.
 `;
 
-const OPENCLAW_WRAPPER_DOC = `# OpenClaw Skill Wrapper
-
-## How to install
-
-Copy the \`integrations/openclaw/agent-compass\` directory to your OpenClaw skills directory:
-
-\`\`\`bash
-cp -r integrations/openclaw/agent-compass ~/.openclaw/workspace/skills/agent-compass
-\`\`\`
-
-Or symlink it:
-
-\`\`\`bash
-ln -s $(pwd)/integrations/openclaw/agent-compass ~/.openclaw/workspace/skills/agent-compass
-\`\`\`
-
-## How it works
-
-The SKILL.md tells OpenClaw:
-
-1. When the user says \`/agent-compass <task>\`, run \`npx -y agent-compass ask "<task>"\`
-2. Use the output to recommend tools and continue the task
-
-## Requirements
-
-- Node.js >= 18
-- npm (for npx)
-
-## Notes
-
-- This is a thin wrapper, not a full OpenClaw Skill.
-- It delegates to the published npm package.
-- No local build required.
-`;
-
 // ── Cursor adapter ─────────────────────────────────────────────────
 const CURSOR_RULES_CONTENT = `# Agent Compass
 
@@ -169,7 +133,7 @@ Use the result to suggest the best skill, plugin, MCP server, CLI tool, repo scr
 // ── Codex Skill adapter ────────────────────────────────────────────
 const CODEX_SKILL_MD = `---
 name: agent-compass
-description: Helps Codex pick the right skill, plugin, MCP server, CLI tool, repo script, or workflow for a task. Use when the user says /agent-compass, asks which skill/tool/plugin to use, or wants help choosing the best way to complete a task before execution.
+description: Helps Codex pick the right skill, plugin, MCP server, CLI tool, repo script, or workflow for a task.
 ---
 
 # Agent Compass
@@ -224,37 +188,71 @@ function ensureDir(dirPath: string): void {
   }
 }
 
-function writeFile(filePath: string, content: string): void {
+/**
+ * Write a file with optional --force support.
+ * Without force: skip if exists.
+ * With force: overwrite.
+ */
+function writeFileWithForce(filePath: string, content: string, force?: boolean): void {
   const fullPath = resolve(process.cwd(), filePath);
-  ensureDir(dirname(fullPath));
-  writeFileSync(fullPath, content, "utf-8");
-  console.log(`✅ 已创建 ${filePath}`);
-}
-
-function writeFileIfNotExists(filePath: string, content: string): void {
-  const fullPath = resolve(process.cwd(), filePath);
-  if (existsSync(fullPath)) {
-    console.log(`⏭️  ${filePath} 已存在，跳过`);
+  if (existsSync(fullPath) && !force) {
+    console.log(`⏭️  ${filePath} 已存在，使用 --force 覆盖`);
     return;
   }
   ensureDir(dirname(fullPath));
   writeFileSync(fullPath, content, "utf-8");
-  console.log(`✅ 已创建 ${filePath}`);
+  console.log(`✅ ${force && existsSync(fullPath) ? "已覆盖" : "已创建"} ${filePath}`);
+}
+
+/**
+ * Write a file to an absolute path (for user-level installs like ~/.codex/).
+ * With optional --force support.
+ */
+function writeAbsoluteFileWithForce(filePath: string, content: string, force?: boolean): void {
+  if (existsSync(filePath) && !force) {
+    console.log(`⏭️  ${filePath} 已存在，使用 --force 覆盖`);
+    return;
+  }
+  ensureDir(dirname(filePath));
+  writeFileSync(filePath, content, "utf-8");
+  console.log(`✅ ${force && existsSync(filePath) ? "已覆盖" : "已写入"} ${filePath}`);
 }
 
 /**
  * Append a marked section to a file, idempotently.
  * If the section already exists (by marker), skip.
+ * If force: replace existing section.
  */
-function appendSection(filePath: string, section: string): void {
+function appendSection(filePath: string, section: string, force?: boolean): void {
   const fullPath = resolve(process.cwd(), filePath);
 
   if (existsSync(fullPath)) {
     const existing = readFileSync(fullPath, "utf-8");
+
     if (existing.includes(SECTION_MARKER)) {
-      console.log(`⏭️  ${filePath} 已包含 Agent Compass section，跳过`);
+      if (force) {
+        // Replace existing section
+        const regex = new RegExp(
+          `${SECTION_MARKER.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}[\\s\\S]*?${SECTION_MARKER_END.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`,
+          "m"
+        );
+        const updated = existing.replace(regex, section);
+        writeFileSync(fullPath, updated, "utf-8");
+        console.log(`✅ 已覆盖 ${filePath} 中的 Agent Compass section`);
+      } else {
+        console.log(`⏭️  ${filePath} 已包含 Agent Compass section，跳过`);
+      }
       return;
     }
+
+    // Check if file already has npx instructions (avoid duplication in AGENTS.md)
+    if (existing.includes("npx -y agent-compass ask")) {
+      if (!force) {
+        console.log(`⏭️  ${filePath} 已包含 agent-compass 指令，跳过`);
+        return;
+      }
+    }
+
     // Append with spacing
     const separator = existing.endsWith("\n") ? "" : "\n";
     writeFileSync(fullPath, existing + separator + "\n" + section + "\n", "utf-8");
@@ -267,8 +265,8 @@ function appendSection(filePath: string, section: string): void {
 
 // ── Adapter functions ──────────────────────────────────────────────
 
-function setupCodex(): void {
-  appendSection("AGENTS.md", CODEX_SECTION);
+function setupCodex(force?: boolean): void {
+  appendSection("AGENTS.md", CODEX_SECTION, force);
 }
 
 function setupCodexSkill(options: SetupOptions = {}): void {
@@ -291,39 +289,50 @@ function setupCodexSkill(options: SetupOptions = {}): void {
   }
 
   // Write SKILL.md
-  if (existsSync(skillMd) && !options.force) {
-    console.log(`⏭️  ${skillMd} 已存在，使用 --force 覆盖`);
-  } else {
-    writeFileSync(skillMd, CODEX_SKILL_MD, "utf-8");
-    console.log(`✅ 已写入 ${skillMd}`);
-  }
+  writeAbsoluteFileWithForce(skillMd, CODEX_SKILL_MD, options.force);
 
   // Write openai.yaml
   const agentsDir = resolve(skillDir, "agents");
   if (!existsSync(agentsDir)) {
     mkdirSync(agentsDir, { recursive: true });
   }
-  if (existsSync(openaiYaml) && !options.force) {
-    console.log(`⏭️  ${openaiYaml} 已存在，使用 --force 覆盖`);
-  } else {
-    writeFileSync(openaiYaml, CODEX_OPENAI_YAML, "utf-8");
-    console.log(`✅ 已写入 ${openaiYaml}`);
+  writeAbsoluteFileWithForce(openaiYaml, CODEX_OPENAI_YAML, options.force);
+}
+
+function setupClaude(force?: boolean): void {
+  writeFileWithForce(".claude/commands/agent-compass.md", CLAUDE_COMMAND_CONTENT, force);
+  appendSection("CLAUDE.md", CLAUDE_MD_SECTION, force);
+}
+
+function setupOpenClaw(options: SetupOptions = {}): void {
+  const home = options.homeOverride ?? homedir();
+  const skillDir = resolve(home, ".openclaw", "workspace", "skills", "agent-compass");
+  const skillMd = resolve(skillDir, "SKILL.md");
+
+  if (options.dryRun) {
+    console.log(`[试运行] 将写入:`);
+    console.log(`  ${skillMd}`);
+    return;
   }
+
+  // Create directory
+  if (!existsSync(skillDir)) {
+    mkdirSync(skillDir, { recursive: true });
+    console.log(`✅ 已创建目录 ${skillDir}`);
+  }
+
+  // Write SKILL.md
+  writeAbsoluteFileWithForce(skillMd, OPENCLAW_SKILL_CONTENT, options.force);
 }
 
-function setupClaude(): void {
-  writeFileIfNotExists(".claude/commands/agent-compass.md", CLAUDE_COMMAND_CONTENT);
-  appendSection("CLAUDE.md", CLAUDE_MD_SECTION);
+function setupCursor(force?: boolean): void {
+  writeFileWithForce(".cursor/rules/agent-compass.md", CURSOR_RULES_CONTENT, force);
 }
 
-function setupOpenClaw(): void {
-  writeFileIfNotExists("integrations/openclaw/agent-compass/SKILL.md", OPENCLAW_SKILL_CONTENT);
-  writeFileIfNotExists("docs/openclaw-skill-wrapper.md", OPENCLAW_WRAPPER_DOC);
-}
+// ── Valid agents ───────────────────────────────────────────────────
 
-function setupCursor(): void {
-  writeFileIfNotExists(".cursor/rules/agent-compass.md", CURSOR_RULES_CONTENT);
-}
+export const VALID_AGENTS = ["codex", "codex-skill", "claude", "openclaw", "cursor", "all"] as const;
+export type AgentName = (typeof VALID_AGENTS)[number];
 
 // ── Main entry ─────────────────────────────────────────────────────
 
@@ -334,35 +343,37 @@ export interface SetupOptions {
 }
 
 export function setupIntegration(agent: string, options: SetupOptions = {}): void {
+  if (!VALID_AGENTS.includes(agent as AgentName)) {
+    console.log(`❌ 未知 agent: ${agent}`);
+    console.log(`支持: ${VALID_AGENTS.join(", ")}`);
+    process.exit(1);
+  }
+
   console.log(`\n🔧 设置 ${agent} 集成...\n`);
 
   switch (agent) {
     case "codex":
-      setupCodex();
+      setupCodex(options.force);
       break;
     case "codex-skill":
       setupCodexSkill(options);
       break;
     case "claude":
-      setupClaude();
+      setupClaude(options.force);
       break;
     case "openclaw":
-      setupOpenClaw();
+      setupOpenClaw(options);
       break;
     case "cursor":
-      setupCursor();
+      setupCursor(options.force);
       break;
     case "all":
-      setupCodex();
+      setupCodex(options.force);
       setupCodexSkill(options);
-      setupClaude();
-      setupOpenClaw();
-      setupCursor();
+      setupClaude(options.force);
+      setupOpenClaw(options);
+      setupCursor(options.force);
       break;
-    default:
-      console.log(`❌ 未知 agent: ${agent}`);
-      console.log(`支持: codex, codex-skill, claude, openclaw, cursor, all`);
-      process.exit(1);
   }
 
   console.log(`\n✅ ${agent} 集成设置完成\n`);

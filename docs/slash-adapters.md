@@ -65,15 +65,15 @@ The user types `/agent-compass <task>` and Claude Code runs the command.
 
 ### OpenClaw
 
-**Files:** `integrations/openclaw/agent-compass/SKILL.md` + `docs/openclaw-skill-wrapper.md`
+**File:** `~/.openclaw/workspace/skills/agent-compass/SKILL.md`
 
-OpenClaw supports skills via `SKILL.md` files. The adapter creates a thin skill wrapper that:
+OpenClaw supports skills via `SKILL.md` files. The adapter writes directly to the user's OpenClaw skills directory:
 
 - Triggers on `/agent-compass <task>`
 - Runs `npx -y agent-compass ask "<task>"`
 - Returns recommendations
 
-Copy or symlink to `~/.openclaw/workspace/skills/agent-compass`.
+No manual copy needed — `setup openclaw` writes to `~/.openclaw/workspace/skills/agent-compass/` directly.
 
 ### Cursor
 

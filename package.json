@@ -10,18 +10,17 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourname/agent-compass.git"
+    "url": "https://github.com/ljpman/agent-compass.git"
   },
-  "homepage": "https://github.com/yourname/agent-compass#readme",
+  "homepage": "https://github.com/ljpman/agent-compass#readme",
   "bugs": {
-    "url": "https://github.com/yourname/agent-compass/issues"
+    "url": "https://github.com/ljpman/agent-compass/issues"
   },
   "files": [
     "dist",
     "registry",
     "docs",
     "examples",
-    "integrations",
     "README.md",
     "LICENSE",
     "CHANGELOG.md",

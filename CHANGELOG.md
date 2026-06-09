@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.1.2 (patch)
+## v0.1.3
 
 Codex Skill Wrapper support.
 
@@ -8,13 +8,24 @@ Codex Skill Wrapper support.
 
 - `setup codex-skill` — installs Agent Compass as a real Codex Skill
 - Writes `~/.codex/skills/agent-compass/SKILL.md` + `agents/openai.yaml`
-- `--force` flag to overwrite existing files
+- `--force` flag to overwrite existing files (now works for all adapters)
 - `--dry-run` flag to preview without writing
 - Idempotent: safe to run multiple times
+
+### Fixes
+
+- CHANGELOG version numbering corrected
+- package.json repository URLs updated to ljpman
+- OpenClaw adapter writes directly to `~/.openclaw/workspace/skills/`
+- `setup codex` detects existing npx instructions to avoid duplication
+- All adapters support `--force` flag
+- Agent name validation in setupIntegration
+- Codex SKILL.md description shortened
 
 ### Docs
 
 - Added docs/codex-skill.md
+- Updated docs/openclaw-skill-wrapper.md
 - Updated README with Codex Skill install instructions
 
 ## v0.1.2

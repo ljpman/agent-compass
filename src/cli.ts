@@ -7,7 +7,7 @@ import { formatConversational } from "./output/formatConversational.js";
 import { formatDetailed } from "./output/formatDetailed.js";
 import { formatDeveloperJson } from "./output/formatDeveloperJson.js";
 import { loadState, saveState } from "./session/sessionState.js";
-import { setupIntegration } from "./setup/setupIntegration.js";
+import { setupIntegration, VALID_AGENTS } from "./setup/setupIntegration.js";
 
 const program = new Command();
 
@@ -148,10 +148,9 @@ program
   .option("--force", "覆盖已存在的文件")
   .option("--dry-run", "仅显示将要写入的文件，不实际写入")
   .action((agent: string, options: { force?: boolean; dryRun?: boolean }) => {
-    const validAgents = ["codex", "codex-skill", "claude", "openclaw", "cursor", "all"];
-    if (!validAgents.includes(agent)) {
+    if (!VALID_AGENTS.includes(agent as any)) {
       console.log(`未知 agent: ${agent}`);
-      console.log(`支持: ${validAgents.join(", ")}`);
+      console.log(`支持: ${VALID_AGENTS.join(", ")}`);
       process.exit(1);
     }
     setupIntegration(agent, options);
