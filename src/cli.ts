@@ -1,0 +1,142 @@
+import { Command } from "commander";
+import { askAgentCompass } from "./router/askAgentCompass.js";
+import { loadRegistry } from "./registry/loadRegistry.js";
+import { validateRegistry } from "./registry/validateRegistry.js";
+import { scanRepo } from "./scanner/scanRepo.js";
+import { formatConversational } from "./output/formatConversational.js";
+import { formatDetailed } from "./output/formatDetailed.js";
+import { formatDeveloperJson } from "./output/formatDeveloperJson.js";
+import { loadState, saveState } from "./session/sessionState.js";
+
+const program = new Command();
+
+program
+  .name("agent-compass")
+  .description("帮 AI Agent 为每个任务找到最合适的技能")
+  .version("0.1.0");
+
+// ── ask command ────────────────────────────────────────────────────
+program
+  .command("ask")
+  .description("根据自然语言任务推荐最合适的技能/工具")
+  .argument("<task>", "自然语言任务描述")
+  .option("--json", "输出 JSON 格式（开发者模式）")
+  .option("--detail", "输出详细对比")
+  .action((task: string, options: { json?: boolean; detail?: boolean }) => {
+    const result = askAgentCompass(task);
+
+    if (options.json) {
+      const total = loadRegistry().entries.length + scanRepo().detected.length;
+      const devOutput = formatDeveloperJson(
+        result.recommendations,
+        result.analysis,
+        result.preferences,
+        total
+      );
+      console.log(JSON.stringify(devOutput, null, 2));
+      return;
+    }
+
+    if (options.detail) {
+      console.log(formatDetailed(result.recommendations, result.analysis));
+      return;
+    }
+
+    console.log(formatConversational(result.recommendations, task));
+
+    // Save state for conversational flow
+    saveState(result.state);
+  });
+
+// ── scan command ───────────────────────────────────────────────────
+program
+  .command("scan")
+  .description("扫描当前仓库，检测可用的脚本和工具")
+  .action(() => {
+    const result = scanRepo();
+
+    console.log(`\n📦 仓库扫描结果\n`);
+    console.log(`框架: ${result.framework ?? "未检测到"}`);
+    console.log(`包管理器: ${result.packageManager ?? "未检测到"}`);
+    console.log(`检测到脚本: ${Object.keys(result.scripts).length}`);
+
+    if (result.detected.length > 0) {
+      console.log(`\n可用工具:`);
+      for (const entry of result.detected) {
+        console.log(`  - ${entry.displayName}: ${entry.shortPitch}`);
+      }
+    }
+
+    if (Object.keys(result.scripts).length > 0) {
+      console.log(`\n脚本:`);
+      for (const [name, cmd] of Object.entries(result.scripts)) {
+        console.log(`  - ${name}: ${cmd}`);
+      }
+    }
+  });
+
+// ── validate-registry command ──────────────────────────────────────
+program
+  .command("validate-registry")
+  .description("校验注册表文件")
+  .argument("[path]", "注册表文件路径", "registry/skills-tools.json")
+  .action((path: string) => {
+    const result = validateRegistry(path);
+
+    if (result.valid) {
+      console.log(`✅ 注册表有效: ${result.validEntries}/${result.totalEntries} 条目通过校验`);
+    } else {
+      console.log(`❌ 注册表校验失败: ${result.errors.length} 个错误`);
+      for (const err of result.errors) {
+        console.log(`  [${err.index}] ${err.id}: ${err.message}`);
+      }
+      process.exit(1);
+    }
+  });
+
+// ── inspect command ────────────────────────────────────────────────
+program
+  .command("inspect")
+  .description("查看指定技能/工具的详细信息")
+  .argument("<id>", "技能/工具 ID")
+  .action((id: string) => {
+    const { entries } = loadRegistry();
+    const entry = entries.find((e) => e.id === id);
+
+    if (!entry) {
+      console.log(`未找到: ${id}`);
+      process.exit(1);
+    }
+
+    console.log(JSON.stringify(entry, null, 2));
+  });
+
+// ── enable command (dry-run by default) ────────────────────────────
+program
+  .command("enable")
+  .description("启用指定技能/工具（试运行）")
+  .argument("<id>", "技能/工具 ID")
+  .option("--dry-run", "仅显示命令，不实际执行", true)
+  .action((id: string, options: { dryRun?: boolean }) => {
+    const { entries } = loadRegistry();
+    const entry = entries.find((e) => e.id === id);
+
+    if (!entry) {
+      console.log(`未找到: ${id}`);
+      process.exit(1);
+    }
+
+    if (!entry.enablement?.command) {
+      console.log(`「${entry.displayName}」无需额外启用`);
+      return;
+    }
+
+    if (options.dryRun !== false) {
+      console.log(`[试运行] 将执行: ${entry.enablement.command}`);
+      if (entry.enablement.notes) {
+        console.log(`注意: ${entry.enablement.notes}`);
+      }
+    }
+  });
+
+program.parse();

@@ -1,0 +1,68 @@
+{
+  "name": "agent-compass",
+  "version": "0.1.0",
+  "description": "帮 AI Agent 为每个任务找到最合适的技能。Agent Compass helps AI agents pick the right skill, plugin, or tool for each task.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "agent-compass": "./dist/cli.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourname/agent-compass.git"
+  },
+  "homepage": "https://github.com/yourname/agent-compass#readme",
+  "bugs": {
+    "url": "https://github.com/yourname/agent-compass/issues"
+  },
+  "files": [
+    "dist",
+    "registry",
+    "docs",
+    "examples",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsx src/cli.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "biome check src/ tests/",
+    "lint:fix": "biome check --fix src/ tests/",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "pnpm build"
+  },
+  "keywords": [
+    "ai-agent",
+    "skill-selector",
+    "tool-router",
+    "plugin-discovery",
+    "mcp",
+    "openclaw",
+    "agent",
+    "compass",
+    "natural-language",
+    "cli"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "zod": "^3.23.0",
+    "commander": "^12.0.0",
+    "chalk": "^5.3.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "tsup": "^8.0.0",
+    "tsx": "^4.15.0",
+    "vitest": "^2.0.0",
+    "@biomejs/biome": "^1.8.0",
+    "@types/node": "^22.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
