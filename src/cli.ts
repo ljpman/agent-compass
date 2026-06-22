@@ -8,7 +8,8 @@ import { formatConversational } from "./output/formatConversational.js";
 import { formatDetailed } from "./output/formatDetailed.js";
 import { formatDeveloperJson } from "./output/formatDeveloperJson.js";
 import { formatProjectSuggestions } from "./output/formatProjectSuggestions.js";
-import { loadState, saveState } from "./session/sessionState.js";
+import { handleReply } from "./session/handleReply.js";
+import { clearState, loadState, saveState } from "./session/sessionState.js";
 import { setupIntegration, VALID_AGENTS } from "./setup/setupIntegration.js";
 
 const program = new Command();
@@ -49,6 +50,26 @@ program
 
     // Save state for conversational flow
     saveState(result.state);
+  });
+
+// ── reply command ──────────────────────────────────────────────────
+program
+  .command("reply")
+  .description("在 ask 之后，用自然语言回复推进会话（选择/确认/换一个/详情）")
+  .argument("<reply>", "用户的自然语言回复")
+  .option("--execute", "确认启用时真正执行命令（默认仅试运行）", false)
+  .action((reply: string, options: { execute?: boolean }) => {
+    const result = handleReply(loadState(), reply, options);
+    console.log(result.message);
+
+    if (result.clear) {
+      clearState();
+      return;
+    }
+
+    if (result.state) {
+      saveState(result.state);
+    }
   });
 
 // ── scan command ───────────────────────────────────────────────────
