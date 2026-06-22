@@ -8,30 +8,43 @@ const SECTION_MARKER_END = "<!-- agent-compass:end -->";
 
 // ── Codex adapter ──────────────────────────────────────────────────
 const CODEX_SECTION = `${SECTION_MARKER}
-# Agent Compass
+# Agent Compass — Skill Finder
 
-When the user starts a message with \`/agent-compass\`, treat the rest of the message as the task.
+Agent Compass finds the best Skill, plugin, MCP server, or CLI for a task, and can scan the current project to suggest high-quality tools that would help.
 
-Run:
+Use it **proactively** whenever the user:
+
+- starts a message with \`/agent-compass <task>\`
+- asks which Skill / plugin / MCP / tool to use or install for something
+- asks you to find a good tool or skill for a task
+- asks what this project needs, or to scan the project for useful skills
+
+Two modes:
 
 \`\`\`bash
-npx -y agent-compass ask "<task after /agent-compass>"
+# 1) They describe a task → recommend the best tool(s)
+npx -y agent-compass ask "<task>"
+
+# 2) Scan the current project → proactively suggest useful skills
+npx -y agent-compass suggest
 \`\`\`
+
+Then show the top 2-3 picks (each has a quality signal and an install command). If installing or risky execution is needed, confirm with the user first.
 
 Examples:
 
 - \`/agent-compass 帮我生成个图\`
-- \`/agent-compass 帮我修登录页 500\`
-- \`/agent-compass 帮我规划一个 AI 工具网站\`
+- "which skill should I use to test the checkout flow?" → \`npx -y agent-compass ask "test checkout flow"\`
+- "what skills would help this project?" → \`npx -y agent-compass suggest\`
 
 Do not clone the Agent Compass repository unless the user explicitly wants to develop Agent Compass itself.
 Do not treat Agent Compass as a Codex Skill. It is a Node.js CLI.
 ${SECTION_MARKER_END}`;
 
 // ── Claude Code adapter ────────────────────────────────────────────
-const CLAUDE_COMMAND_CONTENT = `# Agent Compass
+const CLAUDE_COMMAND_CONTENT = `# Agent Compass — Skill Finder
 
-Pick the right skill, plugin, or tool for the user's task.
+Find the best Skill, plugin, MCP server, or CLI for the user's task, or scan the project for useful ones.
 
 ## Usage
 
@@ -45,58 +58,75 @@ Pick the right skill, plugin, or tool for the user's task.
 npx -y agent-compass ask "$ARGUMENTS"
 \`\`\`
 
+If \`$ARGUMENTS\` is empty or the user wants project-based suggestions, scan the repo instead:
+
+\`\`\`bash
+npx -y agent-compass suggest
+\`\`\`
+
 ## Examples
 
 - \`/agent-compass 帮我生成个图\`
 - \`/agent-compass 帮我修登录页 500\`
-- \`/agent-compass 帮我规划一个 AI 工具网站\`
+- \`/agent-compass what skills would help this project\` → run \`suggest\`
 
 ## Notes
 
 - Agent Compass is a Node.js CLI, not a Claude Code plugin.
-- It returns 2-3 short recommendations with a clear suggestion.
+- It returns 2-3 quality-ranked recommendations, each with a clear suggestion and install command.
 - Do not clone/build the repo unless developing Agent Compass.
 `;
 
 const CLAUDE_MD_SECTION = `${SECTION_MARKER}
-## Agent Compass
+## Agent Compass — Skill Finder
 
-When the user uses \`/agent-compass <task>\`, call:
+Use Agent Compass **proactively** when the user asks which Skill / plugin / MCP / tool to use or install for a task, asks you to find a good tool for something, or asks what skills would help this project — as well as on \`/agent-compass <task>\`.
 
 \`\`\`bash
+# Describe a task → recommend the best tool(s)
 npx -y agent-compass ask "<task>"
+
+# Scan the current project → suggest useful skills
+npx -y agent-compass suggest
 \`\`\`
 
-Do not clone/build the repo unless developing Agent Compass.
+Show the top picks (quality signal + install command), and confirm before installing anything. Do not clone/build the repo unless developing Agent Compass.
 ${SECTION_MARKER_END}`;
 
 // ── OpenClaw adapter ───────────────────────────────────────────────
 const OPENCLAW_SKILL_CONTENT = `---
 name: agent-compass
-description: "Use when the user says /agent-compass or asks which Skill, plugin, MCP server, CLI tool, repo script, or workflow is best for a task. Agent Compass helps AI agents pick the right skill or tool for each task."
+description: "Use proactively when the user asks which Skill, plugin, MCP server, or CLI tool to use or install for a task, asks to find a good tool for something, asks what skills would help the current project, or says /agent-compass. Finds and ranks the best high-quality skill/tool for the task."
 ---
 
-# Agent Compass
+# Agent Compass — Skill Finder
 
-When the user says:
+Find the best Skill, plugin, MCP server, or CLI for a task, and proactively suggest high-quality tools for the current project.
 
-\`\`\`
-/agent-compass <task>
-\`\`\`
+Trigger this skill when the user:
 
-Run:
+- says \`/agent-compass <task>\`
+- asks which Skill / plugin / MCP / tool to use or install for something
+- asks you to find a good tool or skill for a task
+- asks what this project needs, or to scan the project for useful skills
+
+Two modes:
 
 \`\`\`bash
+# 1) Task described → recommend the best tool(s)
 npx -y agent-compass ask "<task>"
+
+# 2) Scan the current project → suggest useful skills
+npx -y agent-compass suggest
 \`\`\`
 
-Use the output to recommend 2-3 choices and continue the user's task.
+Use the output to recommend 2-3 quality-ranked choices (each has a quality signal and an install command), then continue the user's task. Confirm before installing anything.
 
 ## Examples
 
 - \`/agent-compass 帮我生成个图\` → recommends image generation
-- \`/agent-compass 帮我修登录页 500\` → recommends code editing
-- \`/agent-compass 帮我规划一个 AI 工具网站\` → recommends product planning
+- "is there a good MCP for browser testing?" → \`npx -y agent-compass ask "browser testing"\`
+- "what skills would help this project?" → \`npx -y agent-compass suggest\`
 
 ## Important
 
@@ -107,53 +137,63 @@ Use the output to recommend 2-3 choices and continue the user's task.
 `;
 
 // ── Cursor adapter ─────────────────────────────────────────────────
-const CURSOR_RULES_CONTENT = `# Agent Compass
+const CURSOR_RULES_CONTENT = `# Agent Compass — Skill Finder
 
-When the user types \`/agent-compass <task>\`, run:
+Use Agent Compass proactively when the user asks which Skill / plugin / MCP / CLI tool to use or install for a task, asks to find a good tool for something, asks what would help the current project, or types \`/agent-compass <task>\`.
 
 \`\`\`bash
+# Describe a task → recommend the best tool(s)
 npx -y agent-compass ask "<task>"
+
+# Scan the current project → suggest useful skills
+npx -y agent-compass suggest
 \`\`\`
 
-Use the result to suggest the best skill, plugin, MCP server, CLI tool, repo script, or workflow.
+Use the result to suggest the best skill, plugin, MCP server, or CLI tool — each pick comes with a quality signal and an install command. Confirm before installing.
 
 ## Examples
 
 - \`/agent-compass 帮我生成个图\` → recommends image generation
-- \`/agent-compass 帮我修登录页 500\` → recommends code editing
-- \`/agent-compass 帮我规划一个 AI 工具网站\` → recommends product planning
+- "which tool tests the checkout flow?" → \`npx -y agent-compass ask "test checkout flow"\`
+- "what skills would help this project?" → \`npx -y agent-compass suggest\`
 
 ## Notes
 
 - Agent Compass is a Node.js CLI, not a Cursor extension.
 - Do not clone/build Agent Compass unless developing it.
-- Returns 2-3 short recommendations with a clear suggestion.
+- Returns 2-3 quality-ranked recommendations with a clear suggestion.
 `;
 
 // ── Codex Skill adapter ────────────────────────────────────────────
 const CODEX_SKILL_MD = `---
 name: agent-compass
-description: Helps Codex pick the right skill, plugin, MCP server, CLI tool, repo script, or workflow for a task.
+description: Find the best Skill, MCP, plugin or CLI for a task, or scan the project for useful ones. Use when asked which to add.
 ---
 
-# Agent Compass
+# Agent Compass — Skill Finder
 
-Use this skill when the user asks which Skill, plugin, MCP server, CLI tool, repo script, or workflow should be used for a task.
+Use this skill **proactively** when the user:
 
-Also use this skill when the user starts with:
-
-/agent-compass <task>
+- asks which Skill / plugin / MCP server / CLI tool to use or install for a task
+- asks you to find a good tool or skill for something
+- asks what this project needs, or to scan the project for useful skills
+- starts a message with \`/agent-compass <task>\`
 
 ## Behavior
 
-1. Treat the text after \`/agent-compass\` as the task.
-2. Run Agent Compass through the npm CLI:
+1. If they described a task, run:
 
 \`\`\`bash
 npx -y agent-compass ask "<task>"
 \`\`\`
 
-3. Show the result to the user.
+2. If they want suggestions for the current project (or gave no task), scan the repo:
+
+\`\`\`bash
+npx -y agent-compass suggest
+\`\`\`
+
+3. Show the top 2-3 quality-ranked picks — each has a quality signal and an install command.
 4. Keep the response short and conversational.
 5. If the user chooses an option, continue with that option when possible.
 6. If installation or risky execution is needed, ask for confirmation first.

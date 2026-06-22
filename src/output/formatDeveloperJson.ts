@@ -24,6 +24,7 @@ export interface DeveloperOutput {
       safety: number;
       preferenceFit: number;
       confidence: number;
+      quality: number;
     };
     safety: {
       riskLevel: string;
@@ -35,6 +36,8 @@ export interface DeveloperOutput {
     whyThis: string;
     chooseWhen: string;
     avoidWhen: string;
+    installCommand?: string;
+    qualityNote?: string;
   }[];
   meta: {
     totalCandidates: number;
@@ -67,6 +70,8 @@ export function formatDeveloperJson(
       whyThis: rec.whyThis,
       chooseWhen: rec.chooseWhen,
       avoidWhen: rec.avoidWhen,
+      installCommand: rec.installCommand,
+      qualityNote: rec.qualityNote,
     })),
     meta: {
       totalCandidates,

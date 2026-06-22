@@ -5,6 +5,15 @@ export { recommendSkillTools } from "./router/recommendSkillTools.js";
 export { analyzeTask } from "./analyzer/analyzeTask.js";
 export { extractPreferences, mergePreferences } from "./preferences/extractPreferences.js";
 export { scanRepo, type ScanResult } from "./scanner/scanRepo.js";
+export {
+  recommendForProject,
+  buildProjectProfile,
+  deriveProjectNeeds,
+  type ProjectProfile,
+  type ProjectNeed,
+  type ProjectRecommendation,
+  type ProjectRecommendationResult,
+} from "./scanner/recommendForProject.js";
 
 export { scoreSkillTool } from "./scoring/scoreSkillTool.js";
 export { assessSafety } from "./scoring/safety.js";
@@ -21,6 +30,7 @@ export { parseUserReply, type ParsedReply } from "./session/parseUserReply.js";
 export { formatConversational } from "./output/formatConversational.js";
 export { formatDetailed } from "./output/formatDetailed.js";
 export { formatDeveloperJson } from "./output/formatDeveloperJson.js";
+export { formatProjectSuggestions } from "./output/formatProjectSuggestions.js";
 
 // ── Schema re-exports ──────────────────────────────────────────────
 export type {
@@ -36,4 +46,5 @@ export type {
   TaskAnalysis,
   TaskCategory,
   SessionState,
+  Quality,
 } from "./schema/skillTool.js";

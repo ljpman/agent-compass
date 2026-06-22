@@ -39,16 +39,28 @@ export function formatConversational(
   const why = getWhyLine(top);
 
   let output = `这个我建议用「${top.displayName}」`;
-  output += why ? `。${why}。\n\n` : `。\n\n`;
+  const lead = [why, top.qualityNote].filter(Boolean).join("，");
+  output += lead ? `。${lead}。\n\n` : `。\n\n`;
 
   // Build alternatives (max 3 total)
   const all = recommendations.slice(0, 3);
   if (all.length > 1) {
     output += `也可以选：\n`;
     for (const rec of all) {
-      output += `${rec.rank}. ${getRecommendationLabel(rec)}\n`;
+      let line = `${rec.rank}. ${getRecommendationLabel(rec)}`;
+      if (rec.qualityNote) line += `（${rec.qualityNote}）`;
+      output += `${line}\n`;
     }
     output += `\n`;
+  }
+
+  // Install hint for the top pick when it isn't ready to use yet.
+  if (top.nextAction !== "use_now") {
+    if (top.installCommand) {
+      output += `装它：${top.installCommand}\n\n`;
+    } else if (top.sourceUrl) {
+      output += `获取：${top.sourceUrl}\n\n`;
+    }
   }
 
   output += `我建议第 ${top.rank} 个。继续吗？`;

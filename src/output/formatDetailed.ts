@@ -17,9 +17,15 @@ export function formatDetailed(
     output += `- 类型: ${rec.type}\n`;
     output += `- 简介: ${rec.shortPitch}\n`;
     output += `- 推荐理由: ${rec.whyThis}\n`;
+    if (rec.qualityNote) {
+      output += `- 质量信号: ${rec.qualityNote}\n`;
+    }
     output += `- 适用场景: ${rec.chooseWhen}\n`;
     output += `- 避免场景: ${rec.avoidWhen}\n`;
     output += `- 下一步: ${rec.nextAction}\n`;
+    if (rec.installCommand) {
+      output += `- 安装命令: ${rec.installCommand}\n`;
+    }
     output += `- 风险等级: ${rec.safety.riskLevel}\n`;
 
     if (rec.safety.reasons.length > 0) {
@@ -27,9 +33,10 @@ export function formatDetailed(
     }
 
     output += `- 评分: ${rec.score.total}/100`;
-    output += ` (任务适配 ${rec.score.taskFit}, 专精度 ${rec.score.specificity}, `;
-    output += `可用性 ${rec.score.availability}, 安全性 ${rec.score.safety}, `;
-    output += `偏好匹配 ${rec.score.preferenceFit}, 置信度 ${rec.score.confidence})\n`;
+    output += ` (任务适配 ${rec.score.taskFit}, 质量 ${rec.score.quality}, `;
+    output += `专精度 ${rec.score.specificity}, 可用性 ${rec.score.availability}, `;
+    output += `安全性 ${rec.score.safety}, 偏好匹配 ${rec.score.preferenceFit}, `;
+    output += `置信度 ${rec.score.confidence})\n`;
 
     output += `\n`;
   }

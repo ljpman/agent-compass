@@ -25,6 +25,36 @@ describe("askAgentCompass", () => {
     expect(result.recommendations[0].id).toBe("product-planning");
   });
 
+  it("帮我生成一张图推荐图片生成第一", () => {
+    const result = askAgentCompass("帮我生成一张图");
+    expect(result.recommendations.length).toBeGreaterThan(0);
+    expect(result.recommendations[0].id).toBe("image-generation");
+  });
+
+  it("帮我做张图推荐图片生成第一", () => {
+    const result = askAgentCompass("帮我做张图");
+    expect(result.recommendations.length).toBeGreaterThan(0);
+    expect(result.recommendations[0].id).toBe("image-generation");
+  });
+
+  it("帮我生成图片推荐图片生成第一", () => {
+    const result = askAgentCompass("帮我生成图片");
+    expect(result.recommendations.length).toBeGreaterThan(0);
+    expect(result.recommendations[0].id).toBe("image-generation");
+  });
+
+  it("generate an image推荐图片生成第一", () => {
+    const result = askAgentCompass("generate an image");
+    expect(result.recommendations.length).toBeGreaterThan(0);
+    expect(result.recommendations[0].id).toBe("image-generation");
+  });
+
+  it("create an image推荐图片生成第一", () => {
+    const result = askAgentCompass("create an image");
+    expect(result.recommendations.length).toBeGreaterThan(0);
+    expect(result.recommendations[0].id).toBe("image-generation");
+  });
+
   it("登录页500错误推荐debugging相关", () => {
     const result = askAgentCompass("帮我修一下登录页 500");
     expect(result.recommendations.length).toBeGreaterThan(0);

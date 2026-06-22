@@ -7,6 +7,7 @@ export interface ScanResult {
   framework: string | null;
   packageManager: "npm" | "pnpm" | "yarn" | null;
   scripts: Record<string, string>;
+  dependencies: Record<string, string>;
 }
 
 function detectPackageManager(cwd: string): "npm" | "pnpm" | "yarn" | null {
@@ -120,5 +121,5 @@ export function scanRepo(cwd: string = process.cwd()): ScanResult {
   const framework = detectFramework(cwd, deps);
   const packageManager = detectPackageManager(cwd);
 
-  return { detected, framework, packageManager, scripts };
+  return { detected, framework, packageManager, scripts, dependencies: deps };
 }

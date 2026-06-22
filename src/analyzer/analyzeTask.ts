@@ -3,7 +3,7 @@ import type { TaskAnalysis, TaskCategory } from "../schema/skillTool.js";
 // ── Keyword maps ───────────────────────────────────────────────────
 
 const CATEGORY_KEYWORDS: Record<TaskCategory, string[]> = {
-  image_generation: ["生成图", "画", "出图", "AI绘图", "image", "draw", "generate image", "生成一张", "图片生成"],
+  image_generation: ["生成图", "画", "出图", "AI绘图", "image", "draw", "generate image", "生成一张", "图片生成", "做个图", "做张图", "生成图片", "生成个图", "画个", "画一张", "生成一张图"],
   visual_design: ["设计", "design", "UI", "界面", "视觉", "布局"],
   social_media_design: ["小红书", "社媒", "封面", "social media", "xiaohongshu", "cover"],
   planning: ["规划", "计划", "方案", "plan", "strategy", "方向", "思路"],
@@ -74,6 +74,29 @@ function matchCategories(task: string): TaskCategory[] {
     }
     if (score > 0) {
       scores.push({ cat: cat as TaskCategory, score });
+    }
+  }
+
+  // Regex fallback: catch Chinese verb + measure word + noun patterns
+  // e.g., "生成个图", "做张图", "画个图" where measure words (个/张/幅) sit between verb and noun
+  const ZH_VERB_NOUN_PATTERNS: [RegExp, TaskCategory][] = [
+    [/生成[个张一幅些]?[图图片]/, "image_generation"],
+    [/做[个张一幅些]?[图图片]/, "image_generation"],
+    [/画[个张一幅些]?[图图片]/, "image_generation"],
+    [/制作[个张一幅些]?[图图片]/, "image_generation"],
+    [/(?:generate|create|make)\s+(?:an?\s+)?(?:image|picture|photo)/i, "image_generation"],
+    [/写[个一篇]?[文案文章脚本]/, "content_creation"],
+    [/做[个一]?[视频动画]/, "short_video_script"],
+  ];
+
+  for (const [pattern, cat] of ZH_VERB_NOUN_PATTERNS) {
+    if (pattern.test(task)) {
+      const existing = scores.find((s) => s.cat === cat);
+      if (existing) {
+        existing.score += 25; // boost regex matches
+      } else {
+        scores.push({ cat, score: 25 });
+      }
     }
   }
 

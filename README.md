@@ -151,6 +151,7 @@ pnpm dev ask "帮我把 PDF 合同整理成风险摘要"
 ```bash
 pnpm dev ask "帮我生成个图"           # 普通推荐
 pnpm dev ask "帮我测试网页" --json    # JSON 输出
+pnpm dev suggest                      # 扫当前项目，主动推荐能帮上忙的 Skill
 pnpm dev scan                         # 扫描仓库
 pnpm dev validate-registry            # 校验注册表
 pnpm dev inspect image-generation     # 查看工具详情

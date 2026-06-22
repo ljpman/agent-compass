@@ -2,3 +2,5 @@ node_modules/
 dist/
 .agent-compass/
 *.tsbuildinfo
+*.tgz
+.test-setup/

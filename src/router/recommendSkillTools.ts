@@ -46,6 +46,26 @@ function generateAvoidWhen(entry: SkillToolManifest): string {
   return entry.avoidWhen[0] ?? "无特殊限制";
 }
 
+// Short human-readable quality signal, e.g. "官方 · 高人气 · 活跃维护".
+// This is what tells the user "为什么值得装".
+function generateQualityNote(entry: SkillToolManifest): string | undefined {
+  const parts: string[] = [];
+
+  if (entry.trust.level === "official") parts.push("官方");
+  else if (entry.trust.level === "verified") parts.push("已验证");
+
+  const q = entry.quality;
+  if (q?.popularity === "high") parts.push("高人气");
+  else if (q?.popularity === "medium") parts.push("口碑良好");
+  if (q?.maintained) parts.push("活跃维护");
+  if (q?.maturity === "stable") parts.push("稳定");
+  if (typeof q?.stars === "number" && q.stars >= 1000) {
+    parts.push(`★${(q.stars / 1000).toFixed(q.stars >= 10000 ? 0 : 1)}k`);
+  }
+
+  return parts.length > 0 ? parts.join(" · ") : undefined;
+}
+
 export function recommendSkillTools(
   analysis: TaskAnalysis,
   entries: SkillToolManifest[],
@@ -75,5 +95,8 @@ export function recommendSkillTools(
     chooseWhen: generateChooseWhen(entry),
     avoidWhen: generateAvoidWhen(entry),
     nextAction: resolveNextAction(entry, safety),
+    installCommand: entry.enablement?.command,
+    sourceUrl: entry.enablement?.sourceUrl ?? entry.enablement?.docsUrl,
+    qualityNote: generateQualityNote(entry),
   }));
 }

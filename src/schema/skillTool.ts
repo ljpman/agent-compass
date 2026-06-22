@@ -98,6 +98,19 @@ export const Trust = z.object({
 });
 export type Trust = z.infer<typeof Trust>;
 
+// ── Quality ────────────────────────────────────────────────────────
+// Curated quality signals — the core of "推荐质量好的 Skill".
+// All fields optional so existing/scanned entries don't break; when
+// absent, scoring falls back to a baseline derived from trust level.
+export const Quality = z.object({
+  popularity: z.enum(["high", "medium", "low", "niche"]).optional(),
+  maturity: z.enum(["stable", "beta", "experimental"]).optional(),
+  maintained: z.boolean().optional(),
+  stars: z.number().optional(),
+  lastReviewed: z.string().optional(),
+});
+export type Quality = z.infer<typeof Quality>;
+
 // ── Skill / Tool Manifest ──────────────────────────────────────────
 export const SkillToolManifest = z.object({
   id: z.string(),
@@ -122,6 +135,7 @@ export const SkillToolManifest = z.object({
   enablement: Enablement.optional(),
   execution: Execution,
   trust: Trust,
+  quality: Quality.optional(),
 });
 export type SkillToolManifest = z.infer<typeof SkillToolManifest>;
 
@@ -134,6 +148,7 @@ export const RecommendationScore = z.object({
   safety: z.number().min(0).max(100),
   preferenceFit: z.number().min(0).max(100),
   confidence: z.number().min(0).max(100),
+  quality: z.number().min(0).max(100),
 });
 export type RecommendationScore = z.infer<typeof RecommendationScore>;
 
@@ -177,6 +192,9 @@ export const Recommendation = z.object({
   chooseWhen: z.string(),
   avoidWhen: z.string(),
   nextAction: NextAction,
+  installCommand: z.string().optional(),
+  sourceUrl: z.string().optional(),
+  qualityNote: z.string().optional(),
 });
 export type Recommendation = z.infer<typeof Recommendation>;
 

@@ -8,10 +8,11 @@ import type {
 // ── Weight config ──────────────────────────────────────────────────
 const WEIGHTS = {
   taskFit: 0.35,
-  specificity: 0.15,
-  availability: 0.15,
-  safety: 0.15,
-  preferenceFit: 0.10,
+  quality: 0.15,
+  specificity: 0.10,
+  availability: 0.12,
+  safety: 0.10,
+  preferenceFit: 0.08,
   confidence: 0.10,
 } as const;
 
@@ -79,9 +80,12 @@ function computeSpecificity(entry: SkillToolManifest, analysis: TaskAnalysis): n
 // ── Availability ───────────────────────────────────────────────────
 
 function computeAvailability(entry: SkillToolManifest): number {
+  // A skill-finder exists to surface tools you haven't installed yet, so
+  // "not_enabled" must stay only a mild signal — the "I don't want to
+  // install anything" case is handled separately in preferenceFit.
   if (entry.availability.status === "available") return 100;
-  if (entry.availability.status === "not_enabled") return 40;
-  return 20;
+  if (entry.availability.status === "not_enabled") return 70;
+  return 45;
 }
 
 // ── Safety ─────────────────────────────────────────────────────────
@@ -100,6 +104,49 @@ function computeSafety(entry: SkillToolManifest): number {
   if (entry.trust.level === "community") score -= 10;
   if (entry.trust.level === "official") score += 10;
   if (entry.trust.level === "verified") score += 5;
+
+  return Math.max(0, Math.min(100, score));
+}
+
+// ── Quality ────────────────────────────────────────────────────────
+// Curated quality signal — answers "这个 Skill 好不好用？".
+// When an entry has no quality block, fall back to a baseline derived
+// from its trust level so existing entries keep a sensible score.
+function computeQuality(entry: SkillToolManifest): number {
+  const q = entry.quality;
+
+  if (!q) {
+    switch (entry.trust.level) {
+      case "official":
+        return 78;
+      case "verified":
+        return 68;
+      case "community":
+        return 55;
+      case "local":
+        return 60;
+      default:
+        return 40; // unknown
+    }
+  }
+
+  let score = 50;
+
+  if (q.popularity === "high") score += 30;
+  else if (q.popularity === "medium") score += 15;
+  else if (q.popularity === "niche") score -= 5;
+
+  if (q.maturity === "stable") score += 15;
+  else if (q.maturity === "experimental") score -= 10;
+
+  if (q.maintained === true) score += 10;
+  else if (q.maintained === false) score -= 20;
+
+  if (typeof q.stars === "number") {
+    if (q.stars >= 10000) score += 15;
+    else if (q.stars >= 2000) score += 8;
+    else if (q.stars >= 500) score += 3;
+  }
 
   return Math.max(0, Math.min(100, score));
 }
@@ -179,9 +226,11 @@ export function scoreSkillTool(
   const safety = computeSafety(entry);
   const preferenceFit = computePreferenceFit(entry, prefs);
   const confidence = computeConfidence(entry, analysis);
+  const quality = computeQuality(entry);
 
   const total = Math.round(
     taskFit * WEIGHTS.taskFit +
+    quality * WEIGHTS.quality +
     specificity * WEIGHTS.specificity +
     availability * WEIGHTS.availability +
     safety * WEIGHTS.safety +
@@ -197,5 +246,6 @@ export function scoreSkillTool(
     safety,
     preferenceFit,
     confidence,
+    quality,
   };
 }

@@ -1,6 +1,22 @@
 import { readFileSync, existsSync } from "node:fs";
-import { resolve, join } from "node:path";
+import { resolve, join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { SkillToolManifest } from "../schema/skillTool.js";
+
+/**
+ * Resolve the directory of the current module.
+ * Works in both source (tsx) and bundled (tsup) contexts.
+ */
+function getModuleDir(): string {
+  try {
+    if (typeof import.meta.url === "string") {
+      return dirname(fileURLToPath(import.meta.url));
+    }
+  } catch {
+    // fallback
+  }
+  return ".";
+}
 
 export interface RegistryLoadResult {
   entries: SkillToolManifest[];
@@ -10,13 +26,19 @@ export interface RegistryLoadResult {
 export function loadRegistry(registryPath?: string): RegistryLoadResult {
   const errors: string[] = [];
 
+  const modDir = getModuleDir();
+
   // Try provided path, then default locations
   const candidates = registryPath
     ? [registryPath]
     : [
+        // cwd-based (local dev, monorepo)
         resolve(process.cwd(), "registry", "skills-tools.json"),
         resolve(process.cwd(), "skills-tools.json"),
-        join(import.meta.dirname ?? ".", "..", "..", "registry", "skills-tools.json"),
+        // module-relative: handles both dist/ (bundled) and src/registry/ (source)
+        join(modDir, "..", "registry", "skills-tools.json"),
+        join(modDir, "..", "..", "registry", "skills-tools.json"),
+        join(modDir, "registry", "skills-tools.json"),
       ];
 
   let filePath: string | undefined;
@@ -28,7 +50,10 @@ export function loadRegistry(registryPath?: string): RegistryLoadResult {
   }
 
   if (!filePath) {
-    return { entries: [], errors: ["No registry file found"] };
+    errors.push(
+      `No registry file found. Searched:\n${candidates.map((c) => `  - ${c}`).join("\n")}`
+    );
+    return { entries: [], errors };
   }
 
   try {

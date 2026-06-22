@@ -3,9 +3,11 @@ import { askAgentCompass } from "./router/askAgentCompass.js";
 import { loadRegistry } from "./registry/loadRegistry.js";
 import { validateRegistry } from "./registry/validateRegistry.js";
 import { scanRepo } from "./scanner/scanRepo.js";
+import { recommendForProject } from "./scanner/recommendForProject.js";
 import { formatConversational } from "./output/formatConversational.js";
 import { formatDetailed } from "./output/formatDetailed.js";
 import { formatDeveloperJson } from "./output/formatDeveloperJson.js";
+import { formatProjectSuggestions } from "./output/formatProjectSuggestions.js";
 import { loadState, saveState } from "./session/sessionState.js";
 import { setupIntegration, VALID_AGENTS } from "./setup/setupIntegration.js";
 
@@ -14,7 +16,7 @@ const program = new Command();
 program
   .name("agent-compass")
   .description("帮 AI Agent 为每个任务找到最合适的技能")
-  .version("0.1.3");
+  .version("0.1.4");
 
 // ── ask command ────────────────────────────────────────────────────
 program
@@ -74,6 +76,22 @@ program
         console.log(`  - ${name}: ${cmd}`);
       }
     }
+  });
+
+// ── suggest command (scan project → recommend skills) ──────────────
+program
+  .command("suggest")
+  .description("扫描当前项目，主动推荐能帮上忙的高质量 Skill")
+  .option("--json", "输出 JSON 格式（开发者模式）")
+  .action((options: { json?: boolean }) => {
+    const result = recommendForProject();
+
+    if (options.json) {
+      console.log(JSON.stringify(result, null, 2));
+      return;
+    }
+
+    console.log(formatProjectSuggestions(result));
   });
 
 // ── validate-registry command ──────────────────────────────────────
