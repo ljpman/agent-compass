@@ -50,7 +50,7 @@ export function askAgentCompass(
     : prefsFromTask;
 
   // Get recommendations
-  const recommendations = recommendSkillTools(analysis, entries, preferences);
+  const recommendations = recommendSkillTools(analysis, entries, preferences, 3, analysis.language);
 
   // Build state
   const state: SessionState = {

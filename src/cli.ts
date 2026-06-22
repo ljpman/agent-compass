@@ -46,7 +46,7 @@ program
       return;
     }
 
-    console.log(formatConversational(result.recommendations, task));
+    console.log(formatConversational(result.recommendations, task, result.analysis.language));
 
     // Save state for conversational flow
     saveState(result.state);

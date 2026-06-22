@@ -7,6 +7,7 @@ import type {
 import { scoreSkillTool } from "../scoring/scoreSkillTool.js";
 import { assessSafety } from "../scoring/safety.js";
 import { resolveNextAction } from "../actions/resolveNextAction.js";
+import { STR, type OutputLanguage } from "../output/i18n.js";
 
 const WHY_TEMPLATES = [
   (e: SkillToolManifest) => `${e.shortPitch}`,
@@ -48,17 +49,21 @@ function generateAvoidWhen(entry: SkillToolManifest): string {
 
 // Short human-readable quality signal, e.g. "官方 · 高人气 · 活跃维护".
 // This is what tells the user "为什么值得装".
-function generateQualityNote(entry: SkillToolManifest): string | undefined {
+function generateQualityNote(
+  entry: SkillToolManifest,
+  lang: OutputLanguage = "zh"
+): string | undefined {
   const parts: string[] = [];
+  const labels = STR[lang].quality;
 
-  if (entry.trust.level === "official") parts.push("官方");
-  else if (entry.trust.level === "verified") parts.push("已验证");
+  if (entry.trust.level === "official") parts.push(labels.official);
+  else if (entry.trust.level === "verified") parts.push(labels.verified);
 
   const q = entry.quality;
-  if (q?.popularity === "high") parts.push("高人气");
-  else if (q?.popularity === "medium") parts.push("口碑良好");
-  if (q?.maintained) parts.push("活跃维护");
-  if (q?.maturity === "stable") parts.push("稳定");
+  if (q?.popularity === "high") parts.push(labels.high);
+  else if (q?.popularity === "medium") parts.push(labels.medium);
+  if (q?.maintained) parts.push(labels.maintained);
+  if (q?.maturity === "stable") parts.push(labels.stable);
   if (typeof q?.stars === "number" && q.stars >= 1000) {
     parts.push(`★${(q.stars / 1000).toFixed(q.stars >= 10000 ? 0 : 1)}k`);
   }
@@ -70,7 +75,8 @@ export function recommendSkillTools(
   analysis: TaskAnalysis,
   entries: SkillToolManifest[],
   preferences: UserPreferences = {},
-  limit: number = 3
+  limit: number = 3,
+  lang: OutputLanguage = analysis.language
 ): Recommendation[] {
   // Score all entries
   const scored = entries
@@ -97,6 +103,6 @@ export function recommendSkillTools(
     nextAction: resolveNextAction(entry, safety),
     installCommand: entry.enablement?.command,
     sourceUrl: entry.enablement?.sourceUrl ?? entry.enablement?.docsUrl,
-    qualityNote: generateQualityNote(entry),
+    qualityNote: generateQualityNote(entry, lang),
   }));
 }

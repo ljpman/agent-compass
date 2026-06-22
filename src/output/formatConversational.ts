@@ -1,17 +1,29 @@
 import type { Recommendation } from "../schema/skillTool.js";
+import { resolveLanguage, STR, type OutputLanguage } from "./i18n.js";
 
-const NEXT_ACTION_LABELS: Record<string, string> = {
-  use_now: "可直接用",
-  install_then_use: "未启用，可帮你启用",
-  configure_then_use: "需要先配置",
-  authorize_then_use: "需要授权",
-  explain_only: "需了解详情",
-  blocked: "暂不可用",
+const NEXT_ACTION_LABELS: Record<OutputLanguage, Record<string, string>> = {
+  zh: {
+    use_now: "可直接用",
+    install_then_use: "未启用，可帮你启用",
+    configure_then_use: "需要先配置",
+    authorize_then_use: "需要授权",
+    explain_only: "需了解详情",
+    blocked: "暂不可用",
+  },
+  en: {
+    use_now: "ready",
+    install_then_use: "can install",
+    configure_then_use: "needs setup",
+    authorize_then_use: "needs auth",
+    explain_only: "details first",
+    blocked: "blocked",
+  },
 };
 
-function getRecommendationLabel(rec: Recommendation): string {
-  const actionLabel = NEXT_ACTION_LABELS[rec.nextAction] ?? "";
-  return actionLabel ? `${rec.displayName}：${actionLabel}` : rec.displayName;
+function getRecommendationLabel(rec: Recommendation, lang: OutputLanguage): string {
+  const actionLabel = NEXT_ACTION_LABELS[lang][rec.nextAction] ?? "";
+  const separator = lang === "zh" ? "：" : ": ";
+  return actionLabel ? `${rec.displayName}${separator}${actionLabel}` : rec.displayName;
 }
 
 function getWhyLine(rec: Recommendation): string {
@@ -29,25 +41,31 @@ function getWhyLine(rec: Recommendation): string {
 
 export function formatConversational(
   recommendations: Recommendation[],
-  _originalTask: string
+  _originalTask: string,
+  langInput?: OutputLanguage
 ): string {
+  const lang = resolveLanguage(langInput);
+  const str = STR[lang];
+
   if (recommendations.length === 0) {
-    return "没找到合适的工具。换个描述试试？";
+    return str.none;
   }
 
   const top = recommendations[0];
   const why = getWhyLine(top);
+  const sentenceEnd = lang === "zh" ? "。" : ".";
+  const leadJoiner = lang === "zh" ? "，" : ", ";
 
-  let output = `这个我建议用「${top.displayName}」`;
-  const lead = [why, top.qualityNote].filter(Boolean).join("，");
-  output += lead ? `。${lead}。\n\n` : `。\n\n`;
+  let output = str.suggestLead(top.displayName);
+  const lead = [why, top.qualityNote].filter(Boolean).join(leadJoiner);
+  output += lead ? `${sentenceEnd} ${lead}${sentenceEnd}\n\n` : `${sentenceEnd}\n\n`;
 
   // Build alternatives (max 3 total)
   const all = recommendations.slice(0, 3);
   if (all.length > 1) {
-    output += `也可以选：\n`;
+    output += `${str.alts}\n`;
     for (const rec of all) {
-      let line = `${rec.rank}. ${getRecommendationLabel(rec)}`;
+      let line = `${rec.rank}. ${getRecommendationLabel(rec, lang)}`;
       if (rec.qualityNote) line += `（${rec.qualityNote}）`;
       output += `${line}\n`;
     }
@@ -57,13 +75,13 @@ export function formatConversational(
   // Install hint for the top pick when it isn't ready to use yet.
   if (top.nextAction !== "use_now") {
     if (top.installCommand) {
-      output += `装它：${top.installCommand}\n\n`;
+      output += `${str.install}${top.installCommand}\n\n`;
     } else if (top.sourceUrl) {
-      output += `获取：${top.sourceUrl}\n\n`;
+      output += `${str.fetch}${top.sourceUrl}\n\n`;
     }
   }
 
-  output += `我建议第 ${top.rank} 个。继续吗？`;
+  output += str.confirmTail(top.rank);
 
   return output;
 }
